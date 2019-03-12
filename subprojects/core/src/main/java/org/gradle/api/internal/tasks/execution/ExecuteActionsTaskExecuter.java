@@ -267,8 +267,8 @@ public class ExecuteActionsTaskExecuter implements TaskExecuter {
                         LOGGER.info("Custom actions are attached to {}.", task);
                     }
                     if (context.isTaskCachingEnabled()
-                            && context.getTaskExecutionMode().isAllowedToUseCachedResults()
-                            && context.getBuildCacheKey().isValid()
+                        && context.getTaskExecutionMode().isAllowedToUseCachedResults()
+                        && context.getBuildCacheKey().isValid()
                     ) {
                         return Optional.ofNullable(loader.apply(context.getBuildCacheKey()));
                     } else {
@@ -279,8 +279,8 @@ public class ExecuteActionsTaskExecuter implements TaskExecuter {
                 @Override
                 public void store(Consumer<BuildCacheKey> storer) {
                     if (buildCacheEnabled
-                            && context.isTaskCachingEnabled()
-                            && context.getBuildCacheKey().isValid()
+                        && context.isTaskCachingEnabled()
+                        && context.getBuildCacheKey().isValid()
                     ) {
                         storer.accept(context.getBuildCacheKey());
                     }
@@ -356,13 +356,14 @@ public class ExecuteActionsTaskExecuter implements TaskExecuter {
             public void run(BuildOperationContext context) {
                 BuildOperationRef currentOperation = buildOperationExecutor.getCurrentOperation();
                 Throwable actionFailure = null;
+                Logger taskLogger = task.getLogger();
+                task.replaceLogger(decoratedTaskLogger(taskLogger, currentOperation));
                 try {
-                    decorateLogger(currentOperation, task.getLogger());
-
                     action.execute(task);
                 } catch (Throwable t) {
                     actionFailure = t;
                 } finally {
+                    task.replaceLogger(taskLogger);
                     action.releaseContext();
                 }
 
@@ -395,9 +396,9 @@ public class ExecuteActionsTaskExecuter implements TaskExecuter {
         });
     }
 
-    private void decorateLogger(BuildOperationRef currentOperation, Logger logger) {
-        OutputEventListenerBackedLogger delegate = (OutputEventListenerBackedLogger) logger;
-        delegate.setBuildOperation(currentOperation);
+    private static Logger decoratedTaskLogger(Logger taskLogger, BuildOperationRef currentOperation) {
+        OutputEventListenerBackedLogger originLogger = (OutputEventListenerBackedLogger) taskLogger;
+        return new OutputEventListenerBackedLogger(originLogger.getName(), originLogger.getContext(), originLogger.getClock(), currentOperation.getId());
     }
 
     @Contextual

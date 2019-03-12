@@ -61,8 +61,6 @@ class LoggingBuildOperationProgressIntegTest extends AbstractIntegrationSpec {
         """
 
         file("build.gradle") << """
-            import java.util.concurrent.CountDownLatch
-
             apply plugin: 'java'
     
             repositories {
@@ -75,14 +73,6 @@ class LoggingBuildOperationProgressIntegTest extends AbstractIntegrationSpec {
             
             jar.doLast {
                 println 'from jar task'
-            }
-            
-            classes.doLast {
-                println logger
-                CountDownLatch latch = new CountDownLatch(1);
-                def t = new Thread({ logger.lifecycle('from classes task external thread'); latch.countDown(); } as Runnable)
-                t.start()  // Output: hello
-                latch.await();
             }
         
             task resolve {
@@ -148,13 +138,65 @@ class LoggingBuildOperationProgressIntegTest extends AbstractIntegrationSpec {
         operations.parentsOf(downloadEvent).find {
             it.hasDetailsOfType(ExecuteTaskBuildOperationType.Details) && it.details.taskPath == ":resolve"
         }
+    }
+
+    def "captures threaded output sources with context"() {
+        given:
+        executer.requireOwnGradleUserHomeDir()
+        settingsFile << """
+            rootProject.name = 'root'
+            10.times {
+                include "project-\${it}"
+            }
+        """
+        file("build.gradle") << """
+            import java.util.concurrent.CountDownLatch
+            
+            subprojects {
+                10.times {
+                    task("task\$it") { tsk ->
+                        doLast {
+                            threaded {
+                                logger.lifecycle("from \${tsk.path} task external thread")
+                            }
+                        }
+                    }
+                }
+                task all(dependsOn: tasks.matching{it.name.startsWith('task')})
+            }
+            
+            
+            threaded {
+                println("threaded configuration output")
+            }
+            
+            def threaded(Closure action) {
+                CountDownLatch latch = new CountDownLatch(1);
+                def t = new Thread({ action.call(); latch.countDown(); } as Runnable)
+                t.start() 
+                latch.await();
+            }
+        """
+
+        when:
+        succeeds("all")
+
+        then:
+        10.times {  projectCount ->
+            10.times { taskCount ->
+                def classesTaskProgresses = operations.only("Execute doLast {} action for :project-${projectCount}:task$taskCount").progress
+                def threadedTaskLoggingProgress = classesTaskProgresses.find { it.details.message == "from :project-${projectCount}:task$taskCount task external thread" }
+                assert threadedTaskLoggingProgress.details.logLevel == 'LIFECYCLE'
+                assert threadedTaskLoggingProgress.details.category == 'org.gradle.api.Task'
+            }
+        }
 
         def runBuildProgress = operations.only('Run build').progress
-        def threadedProgress = runBuildProgress.find { it.details.spans[0].text == "from classes task external thread${getPlatformLineSeparator()}" }
-        threadedProgress.details.category == 'system.out'
-        threadedProgress.details.spans.size == 1
-        threadedProgress.details.spans[0].styleName == 'Normal'
-        threadedProgress.details.spans[0].text == "from classes task external thread${getPlatformLineSeparator()}"
+        def threadedConfigurationProgress = runBuildProgress.find { it.details.spans[0].text == "threaded configuration output${getPlatformLineSeparator()}" }
+        threadedConfigurationProgress.details.category == 'system.out'
+        threadedConfigurationProgress.details.spans.size == 1
+        threadedConfigurationProgress.details.spans[0].styleName == 'Normal'
+        threadedConfigurationProgress.details.spans[0].text == "threaded configuration output${getPlatformLineSeparator()}"
     }
 
     def "captures output from buildSrc"() {

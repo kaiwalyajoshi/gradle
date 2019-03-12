@@ -94,6 +94,5 @@ public interface TaskInternal extends Task, Configurable<Task> {
      *
      * @param logger the replacement logger
      */
-    @Deprecated
     void replaceLogger(Logger logger);
 }

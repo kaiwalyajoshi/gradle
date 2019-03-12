@@ -21,7 +21,6 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.internal.logging.events.LogEvent;
 import org.gradle.internal.logging.events.OutputEventListener;
-import org.gradle.internal.operations.BuildOperationRef;
 import org.gradle.internal.operations.CurrentBuildOperationRef;
 import org.gradle.internal.operations.OperationIdentifier;
 import org.gradle.internal.time.Clock;
@@ -34,12 +33,18 @@ public class OutputEventListenerBackedLogger implements Logger {
     private final String name;
     private final OutputEventListenerBackedLoggerContext context;
     private final Clock clock;
+
     private OperationIdentifier fallbackBuildOperationId;
 
     public OutputEventListenerBackedLogger(String name, OutputEventListenerBackedLoggerContext context, Clock clock) {
+        this(name, context, clock, null);
+    }
+
+    public OutputEventListenerBackedLogger(String name, OutputEventListenerBackedLoggerContext context, Clock clock, OperationIdentifier fallbackBuildOperationId) {
         this.name = name;
         this.context = context;
         this.clock = clock;
+        this.fallbackBuildOperationId = fallbackBuildOperationId;
     }
 
     public String getName() {
@@ -132,10 +137,14 @@ public class OutputEventListenerBackedLogger implements Logger {
 
     private void log(LogLevel logLevel, Throwable throwable, String message) {
         OperationIdentifier buildOperationId = CurrentBuildOperationRef.instance().getId();
-        if(buildOperationId == null) {
+        if (buildOperationId == null) {
             buildOperationId = fallbackBuildOperationId;
         }
-        LogEvent logEvent = new LogEvent(clock.getCurrentTime(), name, logLevel, message, throwable, buildOperationId);
+        log(logLevel, throwable, message, buildOperationId);
+    }
+
+    private void log(LogLevel logLevel, Throwable throwable, String message, OperationIdentifier operationIdentifier) {
+        LogEvent logEvent = new LogEvent(clock.getCurrentTime(), name, logLevel, message, throwable, operationIdentifier);
         OutputEventListener outputEventListener = context.getOutputEventListener();
         try {
             outputEventListener.onOutput(logEvent);
@@ -482,7 +491,11 @@ public class OutputEventListenerBackedLogger implements Logger {
         }
     }
 
-    public void setBuildOperation(BuildOperationRef currentOperation) {
-        this.fallbackBuildOperationId = currentOperation.getId();
+    public OutputEventListenerBackedLoggerContext getContext() {
+        return context;
+    }
+
+    public Clock getClock() {
+        return clock;
     }
 }
