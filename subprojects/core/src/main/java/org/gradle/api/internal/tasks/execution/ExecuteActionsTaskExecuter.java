@@ -356,14 +356,11 @@ public class ExecuteActionsTaskExecuter implements TaskExecuter {
             public void run(BuildOperationContext context) {
                 BuildOperationRef currentOperation = buildOperationExecutor.getCurrentOperation();
                 Throwable actionFailure = null;
-                Logger taskLogger = task.getLogger();
-                task.replaceLogger(decoratedTaskLogger(taskLogger, currentOperation));
                 try {
                     action.execute(task);
                 } catch (Throwable t) {
                     actionFailure = t;
                 } finally {
-                    task.replaceLogger(taskLogger);
                     action.releaseContext();
                 }
 
@@ -394,11 +391,6 @@ public class ExecuteActionsTaskExecuter implements TaskExecuter {
                 }
             }
         });
-    }
-
-    private static Logger decoratedTaskLogger(Logger taskLogger, BuildOperationRef currentOperation) {
-        OutputEventListenerBackedLogger originLogger = (OutputEventListenerBackedLogger) taskLogger;
-        return new OutputEventListenerBackedLogger(originLogger.getName(), originLogger.getContext(), originLogger.getClock(), currentOperation.getId());
     }
 
     @Contextual

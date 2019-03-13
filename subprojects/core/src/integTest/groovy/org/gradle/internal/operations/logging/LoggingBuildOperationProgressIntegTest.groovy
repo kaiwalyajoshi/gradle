@@ -184,10 +184,9 @@ class LoggingBuildOperationProgressIntegTest extends AbstractIntegrationSpec {
         then:
         10.times {  projectCount ->
             10.times { taskCount ->
-                def classesTaskProgresses = operations.only("Execute doLast {} action for :project-${projectCount}:task$taskCount").progress
+                def classesTaskProgresses = operations.only("Task :project-${projectCount}:task$taskCount").progress
                 def threadedTaskLoggingProgress = classesTaskProgresses.find { it.details.message == "from :project-${projectCount}:task$taskCount task external thread" }
                 assert threadedTaskLoggingProgress.details.logLevel == 'LIFECYCLE'
-                assert threadedTaskLoggingProgress.details.category == 'org.gradle.api.Task'
             }
         }
 
