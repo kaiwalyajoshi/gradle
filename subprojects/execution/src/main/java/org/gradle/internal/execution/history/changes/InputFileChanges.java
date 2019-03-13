@@ -21,4 +21,5 @@ import org.gradle.internal.change.ChangeVisitor;
 
 public interface InputFileChanges extends ChangeContainer {
     boolean accept(String propertyName, ChangeVisitor visitor);
+    ChangeContainer nonIncrementalChanges(Iterable<String> incrementalPropertyNames);
 }

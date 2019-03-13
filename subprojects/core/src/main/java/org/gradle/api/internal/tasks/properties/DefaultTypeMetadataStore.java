@@ -27,6 +27,7 @@ import groovy.lang.GroovyObject;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
 import org.gradle.api.Transformer;
+import org.gradle.api.execution.incremental.IncrementalInput;
 import org.gradle.api.internal.AbstractTask;
 import org.gradle.api.internal.ConventionTask;
 import org.gradle.api.internal.DynamicObjectAware;
@@ -121,6 +122,7 @@ public class DefaultTypeMetadataStore implements TypeMetadataStore {
                 .add(Optional.class)
                 .add(SkipWhenEmpty.class)
                 .add(PathSensitive.class)
+                .add(IncrementalInput.class)
                 .build();
     }
 

@@ -16,6 +16,7 @@
 
 package org.gradle.internal.execution.history.changes;
 
+import com.google.common.base.Joiner;
 import org.gradle.api.tasks.incremental.InputFileDetails;
 import org.gradle.internal.Cast;
 import org.gradle.internal.change.Change;
@@ -46,10 +47,10 @@ public class IncrementalInputChanges implements InputChangesInternal {
         return Cast.uncheckedNonnullCast(visitor.getChanges());
     }
 
-    public static String determinePropertyName(Object property, Map<Object, String> propertyNameByValue) {
-        String propertyName = propertyNameByValue.get(property);
+    public static String determinePropertyName(Object propertyValue, Map<Object, String> propertyNameByValue) {
+        String propertyName = propertyNameByValue.get(propertyValue);
         if (propertyName == null) {
-            throw new UnsupportedOperationException("Cannot query incremental changes: No property found for " + property + ".");
+            throw new UnsupportedOperationException("Cannot query incremental changes: No property found for " + propertyValue + ". Incremental property names: " + Joiner.on(", ").join(propertyNameByValue.values()) + ".");
         }
         return propertyName;
     }

@@ -27,7 +27,9 @@ abstract class IncrementalTasksIntegrationTest extends AbstractIntegrationSpec {
 
     abstract ChangeType getRebuildChangeType();
 
-    def "setup"() {
+    abstract boolean isPrimaryInputIncremental();
+
+    def setup() {
         setupTaskSources()
         buildFile << buildFileBase
         buildFile << """
@@ -54,6 +56,7 @@ abstract class IncrementalTasksIntegrationTest extends AbstractIntegrationSpec {
     import org.gradle.api.execution.incremental.*
 
     class BaseIncrementalTask extends DefaultTask {
+        ${isPrimaryInputIncremental() ? '@IncrementalInput' : ''}
         @InputDirectory
         def File inputDir
 

@@ -23,4 +23,11 @@ public interface ChangeContainer {
      * @return Whether the visitor still wants to obtain more changes.
      */
     boolean accept(ChangeVisitor visitor);
+
+    ChangeContainer EMPTY = new ChangeContainer() {
+        @Override
+        public boolean accept(ChangeVisitor visitor) {
+            return true;
+        }
+    };
 }

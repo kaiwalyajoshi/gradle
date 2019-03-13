@@ -18,7 +18,7 @@ package org.gradle.internal.execution.history.changes;
 
 import com.google.common.collect.ImmutableMap;
 
-public interface InputToPropertyMapping {
+public interface IncrementalInputToPropertyNameMapping {
     ImmutableMap<Object, String> getInputToPropertyNames();
 
 }

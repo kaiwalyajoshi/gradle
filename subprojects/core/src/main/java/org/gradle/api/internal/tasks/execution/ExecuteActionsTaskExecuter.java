@@ -320,9 +320,11 @@ public class ExecuteActionsTaskExecuter implements TaskExecuter {
         public ImmutableMap<Object, String> getInputToPropertyNames() {
             Map<Object, String> propertyNameByValue = new HashMap<Object, String>();
             for (InputFilePropertySpec inputFileProperty : context.getTaskProperties().getInputFileProperties()) {
-                Object value = inputFileProperty.getValue().call();
-                if (value != null) {
-                    propertyNameByValue.put(value, inputFileProperty.getPropertyName());
+                if (inputFileProperty.isIncrementalInput()) {
+                    Object value = inputFileProperty.getValue().call();
+                    if (value != null) {
+                        propertyNameByValue.put(value, inputFileProperty.getPropertyName());
+                    }
                 }
             }
             return ImmutableMap.copyOf(propertyNameByValue);

@@ -28,6 +28,6 @@ public interface ExecutionStateChangeDetector {
         BeforeExecutionState thisExecution,
         Describable executable,
         boolean allowOverlappingOutputs,
-        InputToPropertyMapping inputToPropertyMapping
+        IncrementalInputToPropertyNameMapping inputToPropertyMapping
     );
 }

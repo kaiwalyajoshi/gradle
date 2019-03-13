@@ -16,15 +16,19 @@
 
 package org.gradle.internal.execution.history.changes;
 
-import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import org.gradle.internal.change.ChangeContainer;
 import org.gradle.internal.change.ChangeVisitor;
 import org.gradle.internal.fingerprint.CurrentFileCollectionFingerprint;
 import org.gradle.internal.fingerprint.FileCollectionFingerprint;
 
+import java.util.SortedMap;
+
 public class DefaultInputFileChanges extends AbstractFingerprintChanges implements InputFileChanges {
     private static final String TITLE = "Input";
 
-    public DefaultInputFileChanges(ImmutableSortedMap<String, FileCollectionFingerprint> previous, ImmutableSortedMap<String, CurrentFileCollectionFingerprint> current) {
+    public DefaultInputFileChanges(SortedMap<String, FileCollectionFingerprint> previous, SortedMap<String, CurrentFileCollectionFingerprint> current) {
         super(previous, current, TITLE);
     }
 
@@ -38,5 +42,20 @@ public class DefaultInputFileChanges extends AbstractFingerprintChanges implemen
         CurrentFileCollectionFingerprint currentFileCollectionFingerprint = current.get(propertyName);
         FileCollectionFingerprint previousFileCollectionFingerprint = previous.get(propertyName);
         return currentFileCollectionFingerprint.visitChangesSince(previousFileCollectionFingerprint, TITLE, true, visitor);
+    }
+
+    @Override
+    public ChangeContainer nonIncrementalChanges(Iterable<String> incrementalPropertyNames) {
+        ImmutableSet<String> unfilteredPropertyNames = ImmutableSet.copyOf(incrementalPropertyNames);
+        if (unfilteredPropertyNames.isEmpty()) {
+            // No incremental inputs declared.
+            // For backwards compatibility, we allow changes to all inputs.
+            return ChangeContainer.EMPTY;
+        }
+
+        return new DefaultInputFileChanges(
+            Maps.filterKeys(previous, propertyName -> !unfilteredPropertyNames.contains(propertyName)),
+            Maps.filterKeys(current, propertyName -> !unfilteredPropertyNames.contains(propertyName))
+        );
     }
 }

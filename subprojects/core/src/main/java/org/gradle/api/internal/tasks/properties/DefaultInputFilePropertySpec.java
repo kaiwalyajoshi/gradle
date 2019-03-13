@@ -22,16 +22,23 @@ import org.gradle.api.tasks.FileNormalizer;
 public class DefaultInputFilePropertySpec extends AbstractFilePropertySpec implements InputFilePropertySpec {
     private final boolean skipWhenEmpty;
     private final PropertyValue value;
+    private final boolean incrementalInput;
 
-    public DefaultInputFilePropertySpec(String propertyName, Class<? extends FileNormalizer> normalizer, FileCollection files, PropertyValue value, boolean skipWhenEmpty) {
+    public DefaultInputFilePropertySpec(String propertyName, Class<? extends FileNormalizer> normalizer, FileCollection files, PropertyValue value, boolean skipWhenEmpty, boolean incrementalInput) {
         super(propertyName, normalizer, files);
         this.value = value;
         this.skipWhenEmpty = skipWhenEmpty;
+        this.incrementalInput = incrementalInput;
     }
 
     @Override
     public boolean isSkipWhenEmpty() {
         return skipWhenEmpty;
+    }
+
+    @Override
+    public boolean isIncrementalInput() {
+        return incrementalInput;
     }
 
     @Override

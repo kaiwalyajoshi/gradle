@@ -30,6 +30,9 @@ class IncrementalInputsIntegrationTest extends IncrementalTasksIntegrationTest {
                 }
     
                 incrementalExecution = inputChanges.incremental
+                queryChangesFor.each { parameterName ->
+                    inputChanges.getFileChanges(this."\$parameterName")
+                }
     
                 inputChanges.getFileChanges(inputDir).each { change ->
                     switch (change) {
@@ -53,12 +56,40 @@ class IncrementalInputsIntegrationTest extends IncrementalTasksIntegrationTest {
                 
                 touchOutputs()
             }
+            
+            @Optional
+            @IncrementalInput
+            @InputFile
+            File anotherIncrementalInput
+            
+            @Optional
+            @InputFile
+            File nonIncrementalInput
+            
+            @Internal
+            List<String> queryChangesFor = ["inputDir"]
         """
     }
 
     @Override
     ChangeType getRebuildChangeType() {
         return ChangeType.ADDED
+    }
+
+    @Override
+    boolean isPrimaryInputIncremental() {
+        return true
+    }
+
+    def setup() {
+        buildFile << """
+            tasks.withType(IncrementalTask).configureEach {
+                anotherIncrementalInput = project.file('anotherIncrementalInput')
+                nonIncrementalInput = project.file('nonIncrementalInput')
+            }
+        """
+        file('anotherIncrementalInput').text = "anotherIncrementalInput"
+        file('nonIncrementalInput').text = "nonIncrementalInput"
     }
 
     def "incremental task is executed non-incrementally when input file property has been added"() {
@@ -73,4 +104,31 @@ class IncrementalInputsIntegrationTest extends IncrementalTasksIntegrationTest {
         executesWithRebuildContext()
     }
 
+    def "cannot query non-incremental file input parameters"() {
+        given:
+        previousExecution()
+
+        when:
+        file("inputs/new-input-file.txt") << "new file"
+        buildFile << """
+            tasks.withType(IncrementalTask).configureEach {
+                queryChangesFor.add("nonIncrementalInput")
+            }
+        """
+        then:
+        fails("incremental")
+        failure.assertHasCause("Cannot query incremental changes: No property found for ${file("nonIncrementalInput").absolutePath}. Incremental property names: inputDir, anotherIncrementalInput.")
+    }
+
+    def "changes to non-incremental input parameters cause a rebuild"() {
+        given:
+        file("nonIncrementalInput").makeOlder()
+        previousExecution()
+
+        when:
+        file("inputs/new-input-file.txt") << "new file"
+        file("nonIncrementalInput").text = 'changed'
+        then:        
+        executesWithRebuildContext("ext.added += ['new-input-file.txt']")
+    }
 }

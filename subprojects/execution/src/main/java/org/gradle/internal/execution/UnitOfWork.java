@@ -21,14 +21,14 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.caching.internal.CacheableEntity;
 import org.gradle.internal.execution.history.ExecutionHistoryStore;
 import org.gradle.internal.execution.history.changes.ExecutionStateChanges;
-import org.gradle.internal.execution.history.changes.InputToPropertyMapping;
+import org.gradle.internal.execution.history.changes.IncrementalInputToPropertyNameMapping;
 import org.gradle.internal.file.TreeType;
 import org.gradle.internal.fingerprint.CurrentFileCollectionFingerprint;
 
 import java.time.Duration;
 import java.util.Optional;
 
-public interface UnitOfWork extends CacheableEntity, InputToPropertyMapping {
+public interface UnitOfWork extends CacheableEntity, IncrementalInputToPropertyNameMapping {
 
     /**
      * Executes the work synchronously.

@@ -19,6 +19,7 @@ package org.gradle.api.internal.tasks.properties.annotations;
 import com.google.common.collect.ImmutableList;
 import org.gradle.api.artifacts.transform.InputArtifact;
 import org.gradle.api.artifacts.transform.InputArtifactDependencies;
+import org.gradle.api.execution.incremental.IncrementalInput;
 import org.gradle.api.internal.tasks.properties.BeanPropertyContext;
 import org.gradle.api.internal.tasks.properties.InputFilePropertyType;
 import org.gradle.api.internal.tasks.properties.PropertyValue;
@@ -60,6 +61,7 @@ public class CompileClasspathPropertyAnnotationHandler implements OverridingProp
             propertyName,
             propertyMetadata.isAnnotationPresent(Optional.class),
             propertyMetadata.isAnnotationPresent(SkipWhenEmpty.class),
+            propertyMetadata.isAnnotationPresent(IncrementalInput.class),
             CompileClasspathNormalizer.class,
             value,
             InputFilePropertyType.FILES
