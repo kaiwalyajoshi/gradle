@@ -88,7 +88,6 @@ import java.util.concurrent.Callable;
 import static org.gradle.util.GUtil.uncheckedCall;
 
 public abstract class AbstractTask implements TaskInternal, DynamicObjectAware {
-    private static final Logger BUILD_LOGGER = Logging.getLogger(Task.class);
     private static final ThreadLocal<TaskInfo> NEXT_INSTANCE = new ThreadLocal<TaskInfo>();
 
     private final TaskIdentity<?> identity;
@@ -121,8 +120,6 @@ public abstract class AbstractTask implements TaskInternal, DynamicObjectAware {
 
     private final TaskStateInternal state;
 
-    private Logger logger = BUILD_LOGGER;
-
     private final TaskMutator taskMutator;
     private ObservableList observableActionList;
     private boolean impliesSubProjects;
@@ -135,6 +132,8 @@ public abstract class AbstractTask implements TaskInternal, DynamicObjectAware {
     private LoggingManagerInternal loggingManager;
 
     private String toStringValue;
+    private Logger logger;
+
 
     protected AbstractTask() {
         this(taskInfo());
@@ -159,6 +158,7 @@ public abstract class AbstractTask implements TaskInternal, DynamicObjectAware {
         this.finalizedBy = new DefaultTaskDependency(tasks);
         this.shouldRunAfter = new DefaultTaskDependency(tasks);
         this.services = project.getServices();
+        this.logger = Logging.getLogger(identity.identityPath.getPath());
 
         PropertyWalker propertyWalker = services.get(PropertyWalker.class);
         FileCollectionFactory fileCollectionFactory = services.get(FileCollectionFactory.class);

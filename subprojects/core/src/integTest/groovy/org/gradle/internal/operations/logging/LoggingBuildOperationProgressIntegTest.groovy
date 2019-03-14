@@ -19,6 +19,7 @@ package org.gradle.internal.operations.logging
 import org.gradle.api.internal.tasks.execution.ExecuteTaskBuildOperationType
 import org.gradle.integtests.fixtures.AbstractIntegrationSpec
 import org.gradle.integtests.fixtures.BuildOperationsFixture
+import org.gradle.internal.logging.events.LogEvent
 import org.gradle.internal.logging.events.operations.LogEventBuildOperationProgressDetails
 import org.gradle.internal.logging.events.operations.ProgressStartBuildOperationProgressDetails
 import org.gradle.internal.logging.events.operations.StyledTextBuildOperationProgressDetails
@@ -154,7 +155,7 @@ class LoggingBuildOperationProgressIntegTest extends AbstractIntegrationSpec {
             
             subprojects {
                 10.times {
-                    task("task\$it") { tsk ->
+                    task("myTask\$it") { tsk ->
                         doLast {
                             threaded {
                                 logger.lifecycle("from \${tsk.path} task external thread")
@@ -162,7 +163,7 @@ class LoggingBuildOperationProgressIntegTest extends AbstractIntegrationSpec {
                         }
                     }
                 }
-                task all(dependsOn: tasks.matching{it.name.startsWith('task')})
+                task all(dependsOn: tasks.matching{it.name.startsWith('myTask')})
             }
             
             
@@ -184,8 +185,9 @@ class LoggingBuildOperationProgressIntegTest extends AbstractIntegrationSpec {
         then:
         10.times {  projectCount ->
             10.times { taskCount ->
-                def classesTaskProgresses = operations.only("Task :project-${projectCount}:task$taskCount").progress
-                def threadedTaskLoggingProgress = classesTaskProgresses.find { it.details.message == "from :project-${projectCount}:task$taskCount task external thread" }
+                def taskExecutionOp = operations.only("Task :project-${projectCount}:myTask$taskCount")
+                def classesTaskProgresses = taskExecutionOp.progress
+                def threadedTaskLoggingProgress = classesTaskProgresses.find { it.detailsType == LogEvent && it.details.message == "from :project-${projectCount}:myTask$taskCount task external thread" }
                 assert threadedTaskLoggingProgress.details.logLevel == 'LIFECYCLE'
             }
         }
@@ -405,7 +407,7 @@ class LoggingBuildOperationProgressIntegTest extends AbstractIntegrationSpec {
         assert nestedTaskProgress[0].details.spans[0].text == "foo println${getPlatformLineSeparator()}"
 
         assert nestedTaskProgress[1].details.logLevel == 'LIFECYCLE'
-        assert nestedTaskProgress[1].details.category == 'org.gradle.api.Task'
+        assert nestedTaskProgress[1].details.category == "${projectPath}:foo"
         assert nestedTaskProgress[1].details.message == 'foo from logger'
     }
 

@@ -22,7 +22,6 @@ import org.gradle.api.internal.tasks.TaskExecuter;
 import org.gradle.api.internal.tasks.TaskExecuterResult;
 import org.gradle.api.internal.tasks.TaskExecutionContext;
 import org.gradle.api.internal.tasks.TaskStateInternal;
-import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.TaskExecutionException;
 import org.gradle.internal.logging.slf4j.OutputEventListenerBackedLogger;
 import org.gradle.internal.operations.BuildOperationCategory;
@@ -56,20 +55,19 @@ public class EventFiringTaskExecuter implements TaskExecuter {
             }
 
             private TaskExecuterResult executeTask(BuildOperationContext operationContext) {
-                Logger taskLogger = task.getLogger();
+                OutputEventListenerBackedLogger taskLogger = (OutputEventListenerBackedLogger) task.getLogger();
                 try {
                     taskExecutionListener.beforeExecute(task);
                     BuildOperationRef currentOperation = buildOperationExecutor.getCurrentOperation();
-                    task.replaceLogger(createContextAwareTaskLogger(taskLogger, currentOperation));
+                    taskLogger.setFallbackBuildOperationId(currentOperation.getId());
                 } catch (Throwable t) {
                     state.setOutcome(new TaskExecutionException(task, t));
                     return TaskExecuterResult.WITHOUT_OUTPUTS;
-                } finally {
-                    task.replaceLogger(taskLogger);
                 }
 
                 TaskExecuterResult result = delegate.execute(task, state, context);
 
+                taskLogger.setFallbackBuildOperationId(null);
                 operationContext.setResult(new ExecuteTaskBuildOperationResult(
                     state,
                     result.getReusedOutputOriginMetadata().orElse(null),
@@ -97,10 +95,4 @@ public class EventFiringTaskExecuter implements TaskExecuter {
             }
         });
     }
-
-    private static Logger createContextAwareTaskLogger(Logger taskLogger, BuildOperationRef currentOperation) {
-        OutputEventListenerBackedLogger originLogger = (OutputEventListenerBackedLogger) taskLogger;
-        return new OutputEventListenerBackedLogger(originLogger.getName(), originLogger.getContext(), originLogger.getClock(), currentOperation.getId());
-    }
-
 }

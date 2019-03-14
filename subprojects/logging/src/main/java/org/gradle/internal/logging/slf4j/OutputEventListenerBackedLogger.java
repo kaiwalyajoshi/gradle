@@ -37,14 +37,9 @@ public class OutputEventListenerBackedLogger implements Logger {
     private OperationIdentifier fallbackBuildOperationId;
 
     public OutputEventListenerBackedLogger(String name, OutputEventListenerBackedLoggerContext context, Clock clock) {
-        this(name, context, clock, null);
-    }
-
-    public OutputEventListenerBackedLogger(String name, OutputEventListenerBackedLoggerContext context, Clock clock, OperationIdentifier fallbackBuildOperationId) {
         this.name = name;
         this.context = context;
         this.clock = clock;
-        this.fallbackBuildOperationId = fallbackBuildOperationId;
     }
 
     public String getName() {
@@ -497,5 +492,9 @@ public class OutputEventListenerBackedLogger implements Logger {
 
     public Clock getClock() {
         return clock;
+    }
+
+    public void setFallbackBuildOperationId(OperationIdentifier fallbackBuildOperationId) {
+        this.fallbackBuildOperationId = fallbackBuildOperationId;
     }
 }
