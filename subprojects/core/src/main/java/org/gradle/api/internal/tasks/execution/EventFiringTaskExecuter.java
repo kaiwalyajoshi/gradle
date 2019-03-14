@@ -22,6 +22,7 @@ import org.gradle.api.internal.tasks.TaskExecuter;
 import org.gradle.api.internal.tasks.TaskExecuterResult;
 import org.gradle.api.internal.tasks.TaskExecutionContext;
 import org.gradle.api.internal.tasks.TaskStateInternal;
+import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.TaskExecutionException;
 import org.gradle.internal.logging.slf4j.OutputEventListenerBackedLogger;
 import org.gradle.internal.operations.BuildOperationCategory;
@@ -55,11 +56,15 @@ public class EventFiringTaskExecuter implements TaskExecuter {
             }
 
             private TaskExecuterResult executeTask(BuildOperationContext operationContext) {
-                OutputEventListenerBackedLogger taskLogger = (OutputEventListenerBackedLogger) task.getLogger();
+                Logger logger = task.getLogger();
+                OutputEventListenerBackedLogger outputEventListenerBackedLogger = null;
                 try {
                     taskExecutionListener.beforeExecute(task);
                     BuildOperationRef currentOperation = buildOperationExecutor.getCurrentOperation();
-                    taskLogger.setFallbackBuildOperationId(currentOperation.getId());
+                    if(logger instanceof OutputEventListenerBackedLogger) {
+                        outputEventListenerBackedLogger = (OutputEventListenerBackedLogger) logger;
+                        outputEventListenerBackedLogger.setFallbackBuildOperationId(currentOperation.getId());
+                    }
                 } catch (Throwable t) {
                     state.setOutcome(new TaskExecutionException(task, t));
                     return TaskExecuterResult.WITHOUT_OUTPUTS;
@@ -67,7 +72,9 @@ public class EventFiringTaskExecuter implements TaskExecuter {
 
                 TaskExecuterResult result = delegate.execute(task, state, context);
 
-                taskLogger.setFallbackBuildOperationId(null);
+                if(outputEventListenerBackedLogger != null){
+                    outputEventListenerBackedLogger.setFallbackBuildOperationId(null);
+                }
                 operationContext.setResult(new ExecuteTaskBuildOperationResult(
                     state,
                     result.getReusedOutputOriginMetadata().orElse(null),
